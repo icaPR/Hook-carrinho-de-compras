@@ -24,24 +24,26 @@ interface CartItemsAmount {
 const Home = (): JSX.Element => {
   const [products, setProducts] = useState<ProductFormatted[]>([]);
   const { addProduct, cart } = useCart();
+
   const cartItemsAmount = cart.reduce((sumAmount, product) => {
     sumAmount[product.id] = product.amount;
     return sumAmount;
   }, {} as CartItemsAmount);
-  console.log("LOG cartItemsAmount[0]:  " + cartItemsAmount[0]);
 
   useEffect(() => {
     async function loadProducts() {
-      api.get("/products").then((response) => setProducts(response.data));
+      const response = await api.get<Product[]>("products");
+
+      const data = response.data.map((product) => ({
+        ...product,
+        priceFormatted: formatPrice(product.price),
+      }));
+      setProducts(data);
     }
     loadProducts();
   }, []);
 
   function handleAddProduct(id: number) {
-    const addCartProduct = products.find((addProductCart) => {
-      return addProductCart.id === id;
-    });
-    localStorage.setItem("@RocketShoes:cart", JSON.stringify(addCartProduct));
     addProduct(id);
   }
 
@@ -52,7 +54,7 @@ const Home = (): JSX.Element => {
           <li key={product.id}>
             <img src={product.image} alt={product.title} />
             <strong>{product.title}</strong>
-            <span>{product.price}</span>
+            <span>{product.priceFormatted}</span>
             <button
               type="button"
               data-testid="add-product-button"
